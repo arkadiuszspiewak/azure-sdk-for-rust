@@ -133,7 +133,7 @@ impl PartitionClient {
         let amqp_message = event_data.raw_amqp_message();
         if let Some(message_annotations) = &amqp_message.message_annotations {
             for (key, value) in message_annotations.0.iter() {
-                info!("annotation {} => {:?}", key.as_str(), value);
+                info!("annotation {:?} => {:?}", key, value);
                 if *key == crate::consumer::SEQUENCE_NUMBER_ANNOTATION {
                     match value {
                         azure_core_amqp::AmqpValue::UInt(value) => {
