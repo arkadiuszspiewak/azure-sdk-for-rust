@@ -133,6 +133,7 @@ impl PartitionClient {
         let amqp_message = event_data.raw_amqp_message();
         if let Some(message_annotations) = &amqp_message.message_annotations {
             for (key, value) in message_annotations.0.iter() {
+                info!("annotation {} => {:?}", key.as_str(), value);
                 if *key == crate::consumer::SEQUENCE_NUMBER_ANNOTATION {
                     match value {
                         azure_core_amqp::AmqpValue::UInt(value) => {
@@ -168,6 +169,7 @@ impl PartitionClient {
                     }
                 }
             }
+            tracing::info!("extracted for checkpoint: offset={:?}, sequence={:?}", offset, sequence_number);
             let checkpoint = Checkpoint {
                 fully_qualified_namespace: self.client_details.fully_qualified_namespace.clone(),
                 event_hub_name: self.client_details.eventhub_name.clone(),
