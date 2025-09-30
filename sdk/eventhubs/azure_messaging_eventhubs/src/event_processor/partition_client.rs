@@ -128,7 +128,7 @@ impl PartitionClient {
     /// Returns an error if the sequence number or offset is invalid, or if updating the checkpoint fails.
     pub async fn update_checkpoint(&self, event_data: &ReceivedEventData) -> Result<()> {
         let sequence_number: Option<i64> = event_data.sequence_number();
-        let offset: Option<String> = event_data.offset();
+        let offset: Option<String> = event_data.offset().clone();
         
         let checkpoint = Checkpoint {
             fully_qualified_namespace: self.client_details.fully_qualified_namespace.clone(),
