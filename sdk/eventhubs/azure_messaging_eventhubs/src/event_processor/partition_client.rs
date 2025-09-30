@@ -127,59 +127,19 @@ impl PartitionClient {
     /// # Errors
     /// Returns an error if the sequence number or offset is invalid, or if updating the checkpoint fails.
     pub async fn update_checkpoint(&self, event_data: &ReceivedEventData) -> Result<()> {
-        let mut sequence_number: Option<i64> = None;
-        let mut offset: Option<String> = None;
+        let sequence_number: Option<i64> = event_data.sequence_number();
+        let offset: Option<String> = event_data.offset();
+        
+        let checkpoint = Checkpoint {
+            fully_qualified_namespace: self.client_details.fully_qualified_namespace.clone(),
+            event_hub_name: self.client_details.eventhub_name.clone(),
+            consumer_group: self.client_details.consumer_group.clone(),
+            partition_id: self.partition_id.clone(),
+            offset,
+            sequence_number,
+        };
+        self.checkpoint_store.update_checkpoint(checkpoint).await?;
 
-        let amqp_message = event_data.raw_amqp_message();
-        if let Some(message_annotations) = &amqp_message.message_annotations {
-            for (key, value) in message_annotations.0.iter() {
-                info!("annotation {:?} => {:?}", key, value);
-                if *key == crate::consumer::SEQUENCE_NUMBER_ANNOTATION {
-                    match value {
-                        azure_core_amqp::AmqpValue::UInt(value) => {
-                            sequence_number = Some(*value as i64);
-                        }
-                        azure_core_amqp::AmqpValue::ULong(value) => {
-                            sequence_number = Some(*value as i64);
-                        }
-                        azure_core_amqp::AmqpValue::Long(value) => {
-                            sequence_number = Some(*value);
-                        }
-                        azure_core_amqp::AmqpValue::Int(value) => {
-                            sequence_number = Some(*value as i64);
-                        }
-                        _ => {
-                            return Err(azure_core::error::Error::with_message(
-                                azure_core::error::ErrorKind::Other,
-                                "Invalid sequence number",
-                            ));
-                        }
-                    }
-                } else if *key == crate::consumer::OFFSET_ANNOTATION {
-                    match value {
-                        azure_core_amqp::AmqpValue::String(value) => {
-                            offset = Some(value.to_string());
-                        }
-                        _ => {
-                            return Err(azure_core::error::Error::with_message(
-                                azure_core::error::ErrorKind::Other,
-                                "Invalid offset",
-                            ));
-                        }
-                    }
-                }
-            }
-            tracing::info!("extracted for checkpoint: offset={:?}, sequence={:?}", offset, sequence_number);
-            let checkpoint = Checkpoint {
-                fully_qualified_namespace: self.client_details.fully_qualified_namespace.clone(),
-                event_hub_name: self.client_details.eventhub_name.clone(),
-                consumer_group: self.client_details.consumer_group.clone(),
-                partition_id: self.partition_id.clone(),
-                offset,
-                sequence_number,
-            };
-            self.checkpoint_store.update_checkpoint(checkpoint).await?;
-        }
         Ok(())
     }
 
