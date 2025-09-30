@@ -11,7 +11,7 @@ use azure_core::Result;
 use futures::Stream;
 use std::pin::Pin;
 use std::sync::{Arc, OnceLock, Weak};
-use tracing::{debug, trace, warn};
+use tracing::{debug, trace, warn, info};
 
 /// Represents a client for interacting with a specific partition in Event Hubs.
 ///
